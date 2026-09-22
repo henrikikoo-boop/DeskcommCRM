@@ -783,6 +783,13 @@ export const AUDIT_ACTIONS = [
   "external_db_connection.deleted",
   "external_db_connection.tested",
   "external_db_connection.read",
+
+  // Paridade Orkesta CRM (empresas / propostas / booking / webchat).
+  "crm.company_created",
+  "crm.proposal_created",
+  "crm.proposal_decided",
+  "crm.booking_request_created",
+  "crm.webchat_message_inbound",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */

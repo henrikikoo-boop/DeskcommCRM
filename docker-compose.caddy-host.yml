@@ -1,0 +1,17 @@
+services:
+  # Host Caddy (Orkesta/etc.) already owns :80/:443. Publish the app only on
+  # loopback so the host proxy can reverse_proxy to it without exposing the
+  # container port to the public internet.
+  app:
+    ports:
+      - "127.0.0.1:${DESKCOMM_HOST_PORT:-3050}:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  worker:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  scheduler:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  caddy:
+    profiles: ["caddy-nao-usado-com-proxy-externo"]
