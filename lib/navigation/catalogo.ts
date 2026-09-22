@@ -214,7 +214,7 @@ export const NAV_CATALOG = [
   {
     href: "/app/proposals",
     label: "Propostas",
-    description: "Orçamentos com link público para o cliente aceitar ou recusar.",
+    description: "Modelos com design, envio a partir da oportunidade e link público.",
     icon: "FileText",
     group: "crm",
     section: "O dia a dia da venda",

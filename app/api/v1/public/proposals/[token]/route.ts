@@ -13,6 +13,10 @@ const decideSchema = z.object({
   decision: z.enum(["accepted", "rejected"]),
 });
 
+const trackSchema = z.object({
+  open_seconds: z.number().int().nonnegative().max(86_400).optional(),
+});
+
 type Ctx = { params: Promise<{ token: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
@@ -33,6 +37,28 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   } catch {
     return fail("validation_failed", "JSON inválido", 400, { requestId });
   }
+
+  // heartbeat tracking (no decision)
+  const track = trackSchema.safeParse(body);
+  if (track.success && !("decision" in (body as object))) {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("crm_proposals")
+      .select("id, organization_id, open_seconds")
+      .eq("public_token", token)
+      .maybeSingle();
+    if (!data) return fail("not_found", "Proposta não encontrada", 404, { requestId });
+    const add = track.data.open_seconds ?? 0;
+    await admin
+      .from("crm_proposals")
+      .update({
+        open_seconds: (data.open_seconds ?? 0) + add,
+        last_viewed_at: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+    return ok({ tracked: true }, { requestId });
+  }
+
   const parsed = decideSchema.safeParse(body);
   if (!parsed.success) {
     return fail("validation_failed", "Decisão inválida", 400, { requestId });

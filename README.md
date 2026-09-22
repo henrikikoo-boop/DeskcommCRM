@@ -47,6 +47,18 @@
 
 ---
 
+## 📄 Propostas comerciais
+
+Modelos com design + envio a partir da oportunidade + link público para o cliente.
+
+1. **Modelos** em `/app/proposals/templates` — capa, blocos, cores, tabela de preços e placeholders (`{{lead.title}}`, `{{contact.name}}`, …).
+2. **Na oportunidade** (dossiê do funil) — **Usar modelo** preenche os dados do negócio e abre a edição final.
+3. **Link público** `/p/{token}` — visualização, tracking e aceite/recusa.
+
+Detalhes: [`docs/proposals-comerciais.md`](docs/proposals-comerciais.md).
+
+---
+
 ## ⚡ Instalar na sua VPS (o caminho principal)
 
 ### 1. Entre na sua VPS

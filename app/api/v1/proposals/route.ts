@@ -7,6 +7,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
+import { asBlocks, asDesign } from "@/lib/proposals/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -26,15 +27,19 @@ export async function GET(req: NextRequest) {
   const authz = await requireRole("viewer", { requestId });
   if (!authz.ok) return authz.response;
 
+  const leadId = req.nextUrl.searchParams.get("lead_id");
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let q = supabase
     .from("crm_proposals")
     .select(
-      "id, title, status, currency, amount_cents, public_token, contact_id, company_id, lead_id, created_at, updated_at, sent_at",
+      "id, title, status, currency, amount_cents, public_token, contact_id, company_id, lead_id, template_id, version, valid_until, view_count, created_at, updated_at, sent_at, viewed_at, decided_at",
     )
     .eq("organization_id", authz.org.orgId)
     .order("created_at", { ascending: false })
     .limit(100);
+  if (leadId) q = q.eq("lead_id", leadId);
+
+  const { data, error } = await q;
   if (error) return fail("internal_error", error.message, 500, { requestId });
   return ok(data ?? [], { requestId });
 }
@@ -88,26 +93,59 @@ export async function POST(req: NextRequest) {
   return ok(data, { requestId, status: 201 });
 }
 
-/** Public GET/PATCH by token — also mounted under /api/v1/public/proposals/[token] */
+/** Public GET by token — mounted under /api/v1/public/proposals/[token] */
 export async function getProposalByToken(token: string, requestId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("crm_proposals")
     .select(
-      "id, organization_id, title, status, currency, amount_cents, body_html, public_token, viewed_at, decided_at",
+      "id, organization_id, title, status, currency, amount_cents, body_html, blocks, design, valid_until, version, public_token, viewed_at, decided_at, view_count",
     )
     .eq("public_token", token)
     .maybeSingle();
   if (error) return fail("internal_error", error.message, 500, { requestId });
   if (!data) return fail("not_found", "Proposta não encontrada", 404, { requestId });
 
-  if (data.status === "sent") {
+  const { data: items } = await admin
+    .from("crm_proposal_line_items")
+    .select("id, name, description, quantity, unit_cents, discount_pct, sort_order")
+    .eq("proposal_id", data.id)
+    .order("sort_order", { ascending: true });
+
+  if (data.status === "sent" || data.status === "viewed") {
     await admin
       .from("crm_proposals")
-      .update({ status: "viewed", viewed_at: new Date().toISOString() })
+      .update({
+        status: data.status === "sent" ? "viewed" : data.status,
+        viewed_at: new Date().toISOString(),
+        last_viewed_at: new Date().toISOString(),
+        view_count: (data.view_count ?? 0) + 1,
+      })
       .eq("id", data.id)
       .eq("organization_id", data.organization_id);
-    data.status = "viewed";
+    if (data.status === "sent") data.status = "viewed";
+  }
+
+  let brand: { name: string | null; logo_url: string | null; accent: string | null } = {
+    name: null,
+    logo_url: null,
+    accent: null,
+  };
+  try {
+    const { data: pb } = await admin
+      .from("platform_branding")
+      .select("app_name, logo_url, accent_hex")
+      .eq("id", 1)
+      .maybeSingle();
+    if (pb) {
+      brand = {
+        name: pb.app_name ?? null,
+        logo_url: pb.logo_url ?? null,
+        accent: pb.accent_hex ?? null,
+      };
+    }
+  } catch {
+    /* optional */
   }
 
   return ok(
@@ -117,7 +155,13 @@ export async function getProposalByToken(token: string, requestId: string) {
       currency: data.currency,
       amount_cents: data.amount_cents,
       body_html: data.body_html,
+      blocks: asBlocks(data.blocks),
+      design: asDesign(data.design),
+      line_items: items ?? [],
+      valid_until: data.valid_until,
+      version: data.version,
       public_token: data.public_token,
+      brand,
     },
     { requestId },
   );

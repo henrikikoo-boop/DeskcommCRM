@@ -787,6 +787,11 @@ export const AUDIT_ACTIONS = [
   // Paridade Orkesta CRM (empresas / propostas / booking / webchat).
   "crm.company_created",
   "crm.proposal_created",
+  "crm.proposal_updated",
+  "crm.proposal_from_template",
+  "crm.proposal_template_created",
+  "crm.proposal_template_updated",
+  "crm.proposal_template_deleted",
   "crm.proposal_decided",
   "crm.booking_request_created",
   "crm.webchat_message_inbound",
