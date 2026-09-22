@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   const requestId = req.headers.get("x-request-id") ?? randomUUID();
   const { token } = await ctx.params;
   if (!token || token.length < 8) {
-    return fail("validation_error", "Token inválido", 400, { requestId });
+    return fail("validation_failed", "Token inválido", 400, { requestId });
   }
   return getProposalByToken(token, requestId);
 }
@@ -31,11 +31,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   try {
     body = await req.json();
   } catch {
-    return fail("validation_error", "JSON inválido", 400, { requestId });
+    return fail("validation_failed", "JSON inválido", 400, { requestId });
   }
   const parsed = decideSchema.safeParse(body);
   if (!parsed.success) {
-    return fail("validation_error", "Decisão inválida", 400, { requestId });
+    return fail("validation_failed", "Decisão inválida", 400, { requestId });
   }
 
   const admin = createAdminClient();
@@ -47,7 +47,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   if (error) return fail("internal_error", error.message, 500, { requestId });
   if (!data) return fail("not_found", "Proposta não encontrada", 404, { requestId });
   if (data.status === "accepted" || data.status === "rejected") {
-    return fail("conflict", "Proposta já decidida", 409, { requestId });
+    return fail("state_conflict", "Proposta já decidida", 409, { requestId });
   }
 
   const { data: updated, error: updErr } = await admin

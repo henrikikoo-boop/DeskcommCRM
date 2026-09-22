@@ -44,11 +44,11 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return fail("validation_error", "JSON inválido", 400, { requestId });
+    return fail("validation_failed", "JSON inválido", 400, { requestId });
   }
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return fail("validation_error", "Dados inválidos", 400, {
+    return fail("validation_failed", "Dados inválidos", 400, {
       requestId,
       details: parsed.error.flatten(),
     });

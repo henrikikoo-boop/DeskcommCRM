@@ -59,11 +59,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   try {
     body = await req.json();
   } catch {
-    return fail("validation_error", "JSON inválido", 400, { requestId });
+    return fail("validation_failed", "JSON inválido", 400, { requestId });
   }
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
-    return fail("validation_error", "Dados inválidos", 400, { requestId });
+    return fail("validation_failed", "Dados inválidos", 400, { requestId });
   }
 
   const admin = createAdminClient();

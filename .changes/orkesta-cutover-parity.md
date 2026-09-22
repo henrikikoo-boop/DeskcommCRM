@@ -1,8 +1,13 @@
 ---
 impacto: capacidade_nova
+secao: adicionado
+titulo: Cutover Orkesta com Caddy próprio e paridade de propostas
 ---
 
-Na VPS com Caddy próprio (ex.: Orkesta), o CRM passa a poder subir sem o Caddy
-do kit (`docker-compose.caddy-host.yml`), com Supabase self-host e cutover
-documentado. Inclui MVP de empresas, propostas públicas, booking e webchat
-trazidos do CRM Orkesta.
+Quem opera uma VPS que já tem Caddy (como a Orkesta) consegue subir o CRM sem
+brigar pelas portas 80/443: o compose `docker-compose.caddy-host.yml` publica o
+app só em loopback e o proxy do host aponta para ele. O runbook
+`docs/runbooks/orkesta-deskcomm-cutover.md` descreve homolog, cutover e rollback.
+
+Também entram empresas no CRM, propostas com link público, pedido de horário
+público e um widget de webchat — o mínimo que o CRM Orkesta cobria além do núcleo.
